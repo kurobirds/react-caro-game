@@ -9,3 +9,4 @@ ReactDOM.render(
 	document.getElementById('root')
 );
 
+// Slip component file for easy view

@@ -1,7 +1,6 @@
 import React from 'react';
 import Board from '../components/Board';
 
-
 class Game extends React.Component {
 	constructor() {
 		super();
@@ -10,7 +9,7 @@ class Game extends React.Component {
 				squares: Array(9).fill(null),
 			}],
 			historyPosition: [],
-			historyPlayerTurn: ['X'],
+			historyPlayerTurn: ['✖️'],
 			stepNumber: 0,
 			xIsNext: true,
 			isReverse: false,
@@ -21,20 +20,19 @@ class Game extends React.Component {
 	handleClick(i) {
 		const history = this.state.history.slice(0, this.state.stepNumber + 1);
 		const current = history[history.length - 1];
-		const cells = {
-			squares: current.squares.slice()
-		};
+		const squares = current.squares.slice();
 
-		if (calculateWinner(cells.squares) || cells.squares[i]) {
+		if (calculateWinner(squares) || squares[i]) {
 			return;
 		}
 
-		cells.squares[i] = this.state.xIsNext ? 'X' : 'O';
+		squares[i] = this.state.xIsNext ? '✖️' : '⭕';
 
+		// Use Spread for easy life
 		this.setState({
-			history: [...history, cells],
+			history: [...history, {squares}],
 			historyPosition: [...this.state.historyPosition, i],
-			historyPlayerTurn: [...this.state.historyPlayerTurn, cells.squares[i]],
+			historyPlayerTurn: [...this.state.historyPlayerTurn, squares[i]],
 			stepNumber: history.length,
 			xIsNext: !this.state.xIsNext
 		});
@@ -57,27 +55,32 @@ class Game extends React.Component {
 		const history = this.state.history;
 		const current = history[this.state.stepNumber];
 		const winner = calculateWinner(current.squares);
-		const isReverse = this.state.isReverse;
-		const currentPlayer = this.state.xIsNext ? 'X' : 'O';
-
 
 		const moves = history.map((step, move) => {
+			// This 💩 already has default player start in Array
+			const loopPlayerTurn = this.state.historyPlayerTurn[move];
 
-			const currentMove = this.state.historyPosition[move - 1];
+			// move begin with 0, that time nothing in Array. so next loop we need start with 0 ( current move = 1)
+			const loopPosition = this.state.historyPosition[move - 1];
 
-			let rowHistory;
-			if (currentMove < 3)
-				rowHistory = 0;
-			else if (currentMove < 6)
-				rowHistory = 1;
+			// If you don't know way to get key of Board, here is solution
+			let loopHistoryRow;
+
+			if (loopPosition < 3)
+				loopHistoryRow = 0;
+			else if (loopPosition < 6)
+				loopHistoryRow = 1;
 			else
-				rowHistory = 2;
+				loopHistoryRow = 2;
 
-			const cellInRow = Math.abs((currentMove - 3) % 3);
+
+			const numberCellEachRow = 3;
+			const numberRowOfGame = 3;
+			const indexCell = Math.abs((loopPosition - numberCellEachRow) % numberRowOfGame);
 
 			const desc = move ?
-				`Move #${move}: ${this.state.historyPlayerTurn[move]} ${rowHistory} ${cellInRow}` :
-				`Game start ${this.state.historyPlayerTurn[move]}`;
+				`💥 #${move}: ${loopPlayerTurn} ${loopHistoryRow} - ${indexCell}` :
+				"💣️";
 
 			return (
 				<li key={move}>
@@ -88,16 +91,20 @@ class Game extends React.Component {
 			);
 		});
 
+		// is game has Winner???
 		let status;
+		const currentPlayer = this.state.xIsNext ? '✖️' : '⭕';
 
 		if (winner) {
-			status = 'Winner: ' + winner.winnerPlayer;
+			status = '🏆 Winner: ' + winner.winnerPlayer;
 		} else if (this.state.stepNumber === 9) {
-			status = 'Draw';
+			status = '😬 Draw';
 		} else {
-			status = 'Next player: ' + currentPlayer;
+			status = '🔥 Next player: ' + currentPlayer;
 		}
 
+
+		const isReverse = this.state.isReverse; // Variable help check state reverse list history
 		return (
 			<div className="game">
 				<div className="game-board">
@@ -110,7 +117,9 @@ class Game extends React.Component {
 				<div className="game-info">
 					<div>{status}</div>
 					<ol>{isReverse ? moves.reverse() : moves}</ol>
-					<button onClick={() => this.reverseClick(isReverse)}>Reverse</button>
+					<button onClick={() => this.reverseClick(isReverse)}>
+						<span aria-labelledby="jsx-a11y/accessible-emoji" role="img">🙃</span>
+					</button>
 				</div>
 			</div>
 		);
@@ -131,7 +140,6 @@ function calculateWinner(squares) {
 	for (let i = 0; i < lines.length; i++) {
 		const [a, b, c] = lines[i];
 		if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-			// return squares[a];
 			return {
 				winnerPlayer: squares[a],
 				winnerLocation: lines[i]
